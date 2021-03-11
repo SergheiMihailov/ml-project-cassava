@@ -9,6 +9,7 @@ from keras.models import Sequential
 from keras.layers import Conv2D, MaxPooling2D
 from keras.layers import Activation, Dropout, Flatten, Dense
 from keras import backend as K
+from keras import callbacks.TensorBoard
 
 data = pd.read_csv('train.csv')
 f = open('label_num_to_disease_map.json')
@@ -79,6 +80,10 @@ model.compile(
 model.summary()
 
 epochs = 10 
+
+log_dir = "logs/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
+
 
 model.fit(
         train_set,
