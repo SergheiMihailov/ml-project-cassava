@@ -11,6 +11,28 @@ from keras.layers import Activation, Dropout, Flatten, Dense
 from keras import backend as K
 from keras.callbacks import TensorBoard
 
+def train_model(selected_architecture, architecture_name, train_set, val_set):
+    model = tf.keras.Model(inputs, selected_architecture(inputs))
+    model.compile(
+        optimizer="adam", loss="categorical_crossentropy", metrics=["accuracy"]
+    )
+    model.summary()
+    
+    logdir = os.path.join("logs", architecture_name)
+    tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=logdir, histogram_freq=1)
+
+    model.fit(
+            train_set,
+            steps_per_epoch=train_set.n // 32,
+            epochs=30,
+            validation_data=val_set,
+            validation_steps=val_set.n // 32,
+            callbacks=[tensorboard_callback])
+
+    model.save(os.path.join("models", architecture_name))
+
+
+
 data = pd.read_csv('train.csv')
 f = open('label_num_to_disease_map.json')
 real_labels = json.load(f)
@@ -67,28 +89,6 @@ resNet50V2 = tf.keras.applications.ResNet50V2(
     classifier_activation='softmax'
 )
 
-
-
-selected_architecture = mobileNetV3Small
-
-model = tf.keras.Model(inputs, selected_architecture(inputs))
-model.compile(
-    optimizer="adam", loss="categorical_crossentropy", metrics=["accuracy"]
-)
-
-model.summary()
-
-epochs = 10 
-
-logdir = os.path.join("logs", datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
-
-tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
-
-
-model.fit(
-        train_set,
-        steps_per_epoch=train_set.n // 32,
-        epochs=30,
-        validation_data=val_set,
-        validation_steps=val_set.n // 32,
-        callbacks=[tensorboard_callback])
+train_model(efficientNetB0, "efficientNetB0", train_set, val_set)
+train_model(mobileNetV3Small, "mobileNetV3Small", train_set, val_set)
+train_model(resNet50V2, "resNet50V2", train_set, val_set)
