@@ -1,5 +1,5 @@
 import pandas as pd
-import json
+import json, os, datetime
 import keras
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
@@ -9,14 +9,13 @@ from keras.models import Sequential
 from keras.layers import Conv2D, MaxPooling2D
 from keras.layers import Activation, Dropout, Flatten, Dense
 from keras import backend as K
-from keras import callbacks.TensorBoard
+from keras.callbacks import TensorBoard
 
 data = pd.read_csv('train.csv')
 f = open('label_num_to_disease_map.json')
 real_labels = json.load(f)
 real_labels = {int(k):v for k,v in real_labels.items()}
 data['class_name'] = data.label.map(real_labels)
-
 
 
 train_path = 'train_images/'
@@ -81,7 +80,8 @@ model.summary()
 
 epochs = 10 
 
-log_dir = "logs/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+logdir = os.path.join("logs", datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
+
 tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
 
 
@@ -90,4 +90,5 @@ model.fit(
         steps_per_epoch=train_set.n // 32,
         epochs=30,
         validation_data=val_set,
-        validation_steps=val_set.n // 32)
+        validation_steps=val_set.n // 32,
+        callbacks=[tensorboard_callback])
