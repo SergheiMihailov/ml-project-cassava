@@ -80,9 +80,9 @@ model.summary()
 
 epochs = 10 
 
-hist = model.fit(train_set, 
-                 epochs=epochs, 
-                 validation_data=val_set,
-                 batch_size = BATCH_SIZE,
-                 steps_per_epoch = STEP_SIZE_TRAIN,
-                 validation_steps = STEP_SIZE_VALID)
+model.fit(
+        train_set,
+        steps_per_epoch=train_set.n // 32,
+        epochs=30,
+        validation_data=val_set,
+        validation_steps=val_set.n // 32)
