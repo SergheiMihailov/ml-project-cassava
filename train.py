@@ -2,6 +2,9 @@ import pandas as pd
 import json, os, datetime
 import keras
 import tensorflow as tf
+import matplotlib.pyplot as plt
+import itertools
+import numpy as np
 from sklearn.model_selection import train_test_split
 from keras.preprocessing.image import ImageDataGenerator
 from keras.preprocessing.image import ImageDataGenerator
@@ -11,6 +14,37 @@ from keras.layers import Activation, Dropout, Flatten, Dense
 from keras import backend as K
 from keras.callbacks import TensorBoard
 
+def plot_confusion_matrix(cm, class_names):
+  """
+  Returns a matplotlib figure containing the plotted confusion matrix.
+
+  Args:
+    cm (array, shape = [n, n]): a confusion matrix of integer classes
+    class_names (array, shape = [n]): String names of the integer classes
+  """
+  figure = plt.figure(figsize=(8, 8))
+  plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
+  plt.title("Confusion matrix")
+  plt.colorbar()
+  tick_marks = np.arange(len(class_names))
+  plt.xticks(tick_marks, class_names, rotation=45)
+  plt.yticks(tick_marks, class_names)
+
+  # Compute the labels from the normalized confusion matrix.
+  labels = np.around(cm.astype('float') / cm.sum(axis=1)[:, np.newaxis], decimals=2)
+
+  # Use white text if squares are dark; otherwise black.
+  threshold = cm.max() / 2.
+  for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+    color = "white" if cm[i, j] > threshold else "black"
+    plt.text(j, i, labels[i, j], horizontalalignment="center", color=color)
+
+  plt.tight_layout()
+  plt.ylabel('True label')
+  plt.xlabel('Predicted label')
+  return figure
+
+
 def train_model(selected_architecture, architecture_name, train_set, val_set):
     model = tf.keras.Model(inputs, selected_architecture(inputs))
     model.compile(
@@ -19,7 +53,7 @@ def train_model(selected_architecture, architecture_name, train_set, val_set):
     model.summary()
     
     logdir = os.path.join("logs", architecture_name)
-    tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=logdir, histogram_freq=1)
+    tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=logdir)
 
     model.fit(
             train_set,
@@ -31,6 +65,13 @@ def train_model(selected_architecture, architecture_name, train_set, val_set):
 
     model.save(os.path.join("models", architecture_name))
 
+    test_pred_raw = model.predict(val_set)
+    test_pred = np.argmax(test_pred_raw, axis=1)
+
+    cm = sklearn.metrics.confusion_matrix(val_set.classes, test_pred)
+    # Log the confusion matrix as an image summary.
+    figure = plot_confusion_matrix(cm, class_names=[0,1,2,3,4])
+    figure.savefig(f'/logs/images/{architecture_name}.png')
 
 
 data = pd.read_csv('train.csv')
